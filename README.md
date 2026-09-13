@@ -33,8 +33,4 @@ The web application allows users to upload raw sensor data (CSV format) and inst
 3. **Real-time Prediction:** Instantly predicts the activity based on the uploaded data.
 4. **Confidence Score Analysis:** Displays a bar chart showing the probability distribution across all 6 activities, indicating how confident the model is in its prediction.
 
-## 💻 How to Run Locally
 
-1. Clone this repository:
-   ```bash
-   git clone [https://github.com/YOUR_GITHUB_USERNAME/HAR-Project.git](https://github.com/YOUR_GITHUB_USERNAME/HAR-Project.git)
