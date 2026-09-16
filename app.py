@@ -2,25 +2,28 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# 1. Page Config sabse pehle aani chahiye
-st.set_page_config(page_title="Human Activity Recognition", layout="centered")
+# 1. Page Config (Thoda aur premium look ke liye icon add kiya)
+st.set_page_config(page_title="HAR Project", page_icon="🏃‍♂️", layout="centered")
 
 # 2. Sidebar hamesha upar rakhein
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2936/2936886.png", width=100) # Ek dummy icon
-    st.title("About Project")
+    st.image("https://cdn-icons-png.flaticon.com/512/2936/2936886.png", width=100) 
+    st.title("Project Overview")
     st.info("""
-    **Human Activity Recognition**
+    **Human Activity Recognition (HAR)**
     
-    Yeh model smartphone ke accelerometer aur gyroscope ke data ko analyse karke predict karta hai ki user konsi activity kar raha hai.
+    Yeh machine learning model smartphone ke accelerometer aur gyroscope data ko analyze karke user ki physical activity predict karta hai.
     
-    **Algorithm:** Random Forest
-    **Features:** 561 Sensor Readings
+    * **Algorithm:** Random Forest
+    * **Features:** 561 Sensor Readings
+    * **Accuracy:** 91.14%
     """)
-    st.write("Developed by Hiral")
+    st.markdown("---")
+    st.write("👨‍💻 Developed by **Hiral**")
 
 # 3. Main Page Title
-st.title("🏃‍♂️ Human Activity Recognition (HAR)")
+st.title("🏃‍♂️ Human Activity Recognition")
+st.markdown("Upload smartphone sensor data to instantly predict the user's physical activity.")
 
 # 4. Model Load Karna
 @st.cache_resource
@@ -40,45 +43,63 @@ activity_dict = {
 }
 
 # 5. File Upload aur Processing
-uploaded_file = st.file_uploader("Upload Sensor Data (CSV)", type="csv")
+st.markdown("### 📂 Data Input")
+uploaded_file = st.file_uploader("Upload Sensor Data (CSV format)", type="csv")
 
 if uploaded_file is not None:
     input_data = pd.read_csv(uploaded_file, header=None)
-    st.dataframe(input_data.head(1))
+    
+    # NAYA UI: Expander (Data chhupane aur click par dikhane ke liye)
+    with st.expander("🔍 View Uploaded Raw Data (Click to expand)"):
+        st.dataframe(input_data.head(5), use_container_width=True)
     
     # 6. Raw Data aur Waveform ka Graph Dikhana
     col1, col2 = st.columns(2)
     
     with col1:
-        st.write("### Raw Sensor Data (First 10 values):")
+        st.markdown("#### 🔢 Raw Values (First 10)")
         st.dataframe(input_data.iloc[0, :10].T, use_container_width=True) 
         
     with col2:
-        st.write("### Sensor Waveform:")
+        st.markdown("#### 📈 Sensor Waveform")
         st.line_chart(input_data.iloc[0])
         
+    st.markdown("---") # Ek divider line
+    
     # 7. Prediction aur Probability
-    if st.button("Predict Activity"):
-        # Prediction aur Probability nikalna
-        prediction = model.predict(input_data.iloc[[0]])
-        probabilities = model.predict_proba(input_data.iloc[[0]])[0]
+    # NAYA UI: Bada aur wide button
+    if st.button("🚀 Predict Activity", use_container_width=True):
         
-        pred_num = prediction[0]
-        activity_name = activity_dict.get(pred_num, "Unknown Activity")
-        
-        st.success(f"### Predicted Activity: **{activity_name}**")
-        
-        st.write("#### Model Confidence:")
-        
-        # Model actual me kin classes (1,2,3,4,5,6) ki probab de raha hai, usko access karna
-        model_classes = model.classes_
-        
-        # Un classes ke naam nikalna dictionary se (taaki dono ki length hamesha match ho)
-        class_names = [activity_dict.get(cls, f"Activity {cls}") for cls in model_classes]
-        
-        prob_df = pd.DataFrame({
-            "Activity": class_names,
-            "Probability": probabilities * 100
-        })
-        
-        st.bar_chart(prob_df, x="Activity", y="Probability", color="#00a8e8")
+        # NAYA UI: Loading Spinner (Jab model soch raha ho)
+        with st.spinner('Analyzing sensor patterns...'):
+            prediction = model.predict(input_data.iloc[[0]])
+            probabilities = model.predict_proba(input_data.iloc[[0]])[0]
+            
+            pred_num = prediction[0]
+            activity_name = activity_dict.get(pred_num, "Unknown Activity")
+            
+            st.markdown("### 🎯 Prediction Result")
+            
+            # NAYA UI: Smart Metric Card
+            st.metric(label="Detected Physical Activity", value=activity_name, delta="High Confidence")
+            
+            # NAYA UI: Dynamic Status Messages based on Activity
+            if pred_num in [1, 2, 3]:
+                st.success(f"**Status:** User is in motion ({activity_name})")
+            elif pred_num in [4, 5]:
+                st.info(f"**Status:** User is stationary ({activity_name})")
+            elif pred_num == 6:
+                st.warning(f"**Status:** User is resting ({activity_name})")
+            
+            st.markdown("#### 📊 Confidence Probability Chart")
+            
+            # Model actual me kin classes ki probab de raha hai
+            model_classes = model.classes_
+            class_names = [activity_dict.get(cls, f"Activity {cls}") for cls in model_classes]
+            
+            prob_df = pd.DataFrame({
+                "Activity": class_names,
+                "Probability (%)": probabilities * 100
+            })
+            
+            st.bar_chart(prob_df, x="Activity", y="Probability (%)", color="#00a8e8")
